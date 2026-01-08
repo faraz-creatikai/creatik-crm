@@ -109,6 +109,10 @@ const data = {
           url: "/masters/locations",
         },
         {
+          title: "Sub Locations",
+          url: "/masters/sublocation",
+        },
+        {
           title: "Facilities",
           url: "/masters/facilities",
         },

@@ -41,6 +41,8 @@ import ObjectSelect from "../component/ObjectSelect";
 import { FaPhone, FaWhatsapp } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import { exportToExcel } from "../utils/exportToExcel";
+import { getsubLocationByCityLoc } from "@/store/masters/sublocation/sublocation";
+import { Sub } from "@radix-ui/react-dropdown-menu";
 
 
 interface DeleteAllDialogDataInterface { }
@@ -99,6 +101,7 @@ export default function Customer() {
     CustomerSubType: [] as string[],
     City: [] as string[],
     Location: [] as string[],
+    SubLocation: [] as string[],
     User: [] as string[],
     Keyword: "" as string,
     Limit: ["100"] as string[],
@@ -110,6 +113,7 @@ export default function Customer() {
     CustomerSubType: { id: "", name: "" },
     City: { id: "", name: "" },
     Location: { id: "", name: "" },
+    SubLocation: { id: "", name: "" },
   });
 
 
@@ -400,6 +404,7 @@ export default function Customer() {
       CustomerSubType: [],
       City: [],
       Location: [],
+      SubLocation: [],
       User: [],
       Keyword: "",
       Limit: ["10"],
@@ -410,6 +415,7 @@ export default function Customer() {
       CustomerSubType: { id: "", name: "" },
       City: { id: "", name: "" },
       Location: { id: "", name: "" },
+      SubLocation: { id: "", name: "" },
     })
     setIsFilteredTrigger(false);
     await getCustomers();
@@ -586,7 +592,8 @@ export default function Customer() {
     { key: "CustomerType", staticData: [] },
     { key: "CustomerSubtype", staticData: [] },
     { key: "City", fetchFn: getCity },
-    { key: "Location", staticData: [] } // dependent
+    { key: "Location", staticData: [] }, // dependent
+    { key: "SubLocation", staticData: [] }, // dependent
 
   ];
 
@@ -611,6 +618,7 @@ export default function Customer() {
     const campaignId = dependent.Campaign.id;
     const customerTypeId = dependent.CustomerType.id;
     const cityId = dependent.City.id;
+    const locationId = dependent.Location.id;
 
     if (campaignId) {
       fetchCustomerType(campaignId);
@@ -633,7 +641,14 @@ export default function Customer() {
       setFilters(prev => ({ ...prev, Location: [] }));
     }
 
-  }, [dependent.Campaign.id, dependent.CustomerType.id, dependent.City.id]);
+    if( cityId && locationId) {
+      fetchSubLocation(cityId, locationId);
+    } else {
+      setFieldOptions(prev => ({ ...prev, SubLocation: [] }));
+      setFilters(prev => ({ ...prev, SubLocation: [] }));
+    }
+
+  }, [dependent.Campaign.id, dependent.CustomerType.id, dependent.City.id, dependent.Location.id]);
 
 
   const fetchCustomerType = async (campaignId: string) => {
@@ -654,6 +669,16 @@ export default function Customer() {
     } catch (error) {
       console.error("Error fetching location:", error);
       setFieldOptions((prev) => ({ ...prev, Location: [] }));
+    }
+  };
+
+  const fetchSubLocation = async (cityId: string, locationId: string) => {
+    try {
+      const res = await getsubLocationByCityLoc(cityId, locationId);
+      setFieldOptions((prev) => ({ ...prev, SubLocation: res || [] }));
+    } catch (error) {
+      console.error("Error fetching sublocation:", error);
+      setFieldOptions((prev) => ({ ...prev, SubLocation: [] }));
     }
   };
 
@@ -1259,6 +1284,29 @@ export default function Customer() {
                             Location: { id: selectedObj._id, name: selectedObj.Name },
                           }));
                           handleSelectChange("Location", selectedObj.Name, updatedFilters)
+                        }
+                      }}
+                      isSearchable
+                    />
+                    <ObjectSelect
+                      options={Array.isArray(fieldOptions?.SubLocation) ? fieldOptions.SubLocation : []}
+                      label="Sub Location"
+                      value={dependent.SubLocation.id}
+                      getLabel={(item) => item?.Name || ""}
+                      getId={(item) => item?._id || ""}
+                      onChange={(selectedId) => {
+                        const selectedObj = fieldOptions.SubLocation.find((i) => i._id === selectedId);
+                        if (selectedObj) {
+                          const updatedFilters = {
+                            ...filters,
+                            SubLocation: [selectedObj.Name]
+                          };
+                          setFilters(updatedFilters);
+                          setDependent(prev => ({
+                            ...prev,
+                            SubLocation: { id: selectedObj._id, name: selectedObj.Name },
+                          }));
+                          handleSelectChange("SubLocation", selectedObj.Name, updatedFilters)
                         }
                       }}
                       isSearchable

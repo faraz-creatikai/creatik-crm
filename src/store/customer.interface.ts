@@ -6,6 +6,7 @@ export interface customerAllDataInterface {
   ContactNumber: string;
   City: {id:string; name:string};
   Location:{id:string; name:string};
+  SubLocation:{id:string; name:string};
   Area: string;
   Address: string;
   Email: string;
@@ -32,6 +33,7 @@ export interface customerImportDataInterface {
   ContactNumber: string;
   City: string;
   Location: string;
+  SubLocation: string;
   Area: string;
   Address: string;
   Email: string;

@@ -106,6 +106,11 @@ export const importCustomer = async (formData: FormData) => {
     }
 
     const result = await response.json();
+    console.log(" import customer result ", result)
+    if (!result.success) {
+      toast.error(result.message ?? "Something went wrong")
+      throw new Error(result.message ?? "Something went wrong")
+    }
     return result;
   } catch (error) {
     console.error("SERVER ERROR: ", error);

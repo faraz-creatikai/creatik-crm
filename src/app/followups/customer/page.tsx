@@ -44,6 +44,8 @@ import DynamicAdvance from "@/app/phonescreens/DashboardScreens/DynamicAdvance";
 import { getSubtypeByCampaignAndType } from "@/store/masters/subtype/subtype";
 import { handleFieldOptionsObject } from "@/app/utils/handleFieldOptionsObject";
 import ObjectSelect from "@/app/component/ObjectSelect";
+import { getsubLocationByCityLoc } from "@/store/masters/sublocation/sublocation";
+import { Sub } from "@radix-ui/react-dropdown-menu";
 
 export default function CustomerFollowups() {
     const router = useRouter();
@@ -69,6 +71,7 @@ export default function CustomerFollowups() {
         StatusType: [] as string[],
         City: [] as string[],
         Location: [] as string[],
+        SubLocation: [] as string[],
         User: [] as string[],
         Keyword: "" as string,
         StartDate: "",
@@ -81,6 +84,7 @@ export default function CustomerFollowups() {
         PropertyType: { id: "", name: "" },
         City: { id: "", name: "" },
         Location: { id: "", name: "" },
+        SubLocation: { id: "", name: ""},
     });
 
     // 🔹 Fetch All Followups
@@ -213,6 +217,7 @@ export default function CustomerFollowups() {
             StatusType: [],
             City: [],
             Location: [],
+            SubLocation: [],
             User: [],
             Keyword: "",
             StartDate: "",
@@ -224,6 +229,7 @@ export default function CustomerFollowups() {
             PropertyType: { id: "", name: "" },
             City: { id: "", name: "" },
             Location: { id: "", name: "" },
+            SubLocation: { id: "", name: ""},   
         });
         await getFollowups();
     };
@@ -291,7 +297,8 @@ export default function CustomerFollowups() {
         { key: "Campaign", fetchFn: getCampaign },
         { key: "PropertyTypes", fetchFn: getTypes },
         { key: "City", fetchFn: getCity },
-        { key: "Location", fetchFn: getLocation },// dependent
+        { key: "Location", staticData: [] },// dependent
+        { key: "SubLocation", staticData: [] },// dependent
 
     ];
 
@@ -316,6 +323,7 @@ export default function CustomerFollowups() {
     useEffect(() => {
         const campaignId = dependent.Campaign.id;
         const cityId = dependent.City.id;
+        const locationId = dependent.Location.id;
 
         if (campaignId) {
             fetchCustomerType(campaignId);
@@ -332,8 +340,14 @@ export default function CustomerFollowups() {
             setFieldOptions(prev => ({ ...prev, Location: [] }));
             setFilters(prev => ({ ...prev, Location: [] }));
         }
+        if( cityId && locationId) {
+            fetchSubLocation(cityId, locationId);
+        } else {
+            setFieldOptions(prev => ({ ...prev, SubLocation: [] }));
+            setFilters(prev => ({ ...prev, SubLocation: [] }));
+        }
 
-    }, [dependent.Campaign.id, dependent.City.id]);
+    }, [dependent.Campaign.id, dependent.City.id, dependent.Location.id]);
 
 
     const fetchCustomerType = async (campaignId: string) => {
@@ -356,6 +370,16 @@ export default function CustomerFollowups() {
             setFieldOptions((prev) => ({ ...prev, Location: [] }));
         }
     };
+
+      const fetchSubLocation = async (cityId: string, locationId: string) => {
+        try {
+          const res = await getsubLocationByCityLoc(cityId, locationId);
+          setFieldOptions((prev) => ({ ...prev, SubLocation: res || [] }));
+        } catch (error) {
+          console.error("Error fetching sublocation:", error);
+          setFieldOptions((prev) => ({ ...prev, SubLocation: [] }));
+        }
+      };
 
 
     const campaign = ['Buyer', 'Seller', 'Rent Out', 'Rent In', 'Hostel/PG', 'Agents', 'Services', 'Others', 'Guest House', 'Happy Stay'];
@@ -545,6 +569,7 @@ export default function CustomerFollowups() {
                                         ...prev,
                                         City: { id: selectedObj._id, name: selectedObj.Name },
                                         Location: { id: "", name: "" },
+                                        SubLocation: { id: "", name: "" },
                                     }));
                                     handleSelectChange("City", selectedObj.Name, updatedFilters)
                                 }
@@ -568,6 +593,7 @@ export default function CustomerFollowups() {
                                     setDependent(prev => ({
                                         ...prev,
                                         Location: { id: selectedObj._id, name: selectedObj.Name },
+                                        SubLocation: { id: "", name: "" },
                                     }));
                                     handleSelectChange("Location", selectedObj.Name, updatedFilters)
                                 }
@@ -707,6 +733,7 @@ export default function CustomerFollowups() {
                                                         ...prev,
                                                         City: { id: selectedObj._id, name: selectedObj.Name },
                                                         Location: { id: "", name: "" },
+                                                        SubLocation: { id: "", name: "" },
                                                     }));
                                                     handleSelectChange("City", selectedObj.Name, updatedFilters)
                                                 }
@@ -730,8 +757,31 @@ export default function CustomerFollowups() {
                                                     setDependent(prev => ({
                                                         ...prev,
                                                         Location: { id: selectedObj._id, name: selectedObj.Name },
+                                                        SubLocation: { id: "", name: "" },
                                                     }));
                                                     handleSelectChange("Location", selectedObj.Name, updatedFilters)
+                                                }
+                                            }}
+                                        />
+                                        <ObjectSelect
+                                            options={Array.isArray(fieldOptions?.SubLocation) ? fieldOptions.SubLocation : []}
+                                            label="Sub Location"
+                                            value={dependent.SubLocation.id}
+                                            getLabel={(item) => item?.Name || ""}
+                                            getId={(item) => item?._id || ""}
+                                            onChange={(selectedId) => {
+                                                const selectedObj = fieldOptions.SubLocation.find((i) => i._id === selectedId);
+                                                if (selectedObj) {
+                                                    const updatedFilters = {
+                                                        ...filters,
+                                                        SubLocation: [selectedObj.Name]
+                                                    };
+                                                    setFilters(updatedFilters);
+                                                    setDependent(prev => ({
+                                                        ...prev,
+                                                        SubLocation: { id: selectedObj._id, name: selectedObj.Name },
+                                                    }));
+                                                    handleSelectChange("SubLocation", selectedObj.Name, updatedFilters)
                                                 }
                                             }}
                                         />

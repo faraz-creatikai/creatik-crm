@@ -123,6 +123,15 @@ export const API_ROUTES = {
       UPDATE: (id: string) => `${BASE_URL}/mas/loc/${id}`,
       DELETE: (id: string) => `${BASE_URL}/mas/loc/${id}`,
     },
+    SUBLOCATION: {
+      GET_ALL: `${BASE_URL}/mas/subloc`,
+      GET_BY_ID: (id: string) => `${BASE_URL}/mas/subloc/${id}`,
+      GET_ALL_BY_CITY_LOCATION: (cityId: string,locationId:string) => `${BASE_URL}/mas/subloc/cityloc/${cityId}/${locationId}`,
+      GET_BY_PARAMS: (params: string) => `${BASE_URL}/mas/subloc?${params}`,
+      ADD: `${BASE_URL}/mas/subloc`,
+      UPDATE: (id: string) => `${BASE_URL}/mas/subloc/${id}`,
+      DELETE: (id: string) => `${BASE_URL}/mas/subloc/${id}`,
+    },
     FACILITIES: {
       GET_ALL: `${BASE_URL}/mas/fac`,
       GET_BY_ID: (id: string) => `${BASE_URL}/mas/fac/${id}`,

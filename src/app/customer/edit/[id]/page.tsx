@@ -23,6 +23,7 @@ import ObjectSelect from "@/app/component/ObjectSelect";
 import { InputField } from "@/app/component/InputField";
 import TextareaField from "@/app/component/datafields/TextareaField";
 import { trimCountryCodeHelper } from "@/app/utils/trimCountryCodeHelper";
+import { getsubLocationByCityLoc } from "@/store/masters/sublocation/sublocation";
 
 interface ErrorInterface {
   [key: string]: string;
@@ -40,6 +41,7 @@ export default function CustomerEdit() {
     ContactNumber: "",
     City: { id: "", name: "" },
     Location: { id: "", name: "" },
+    SubLocation: { id: "", name: "" },
     Area: "",
     Address: "",
     Email: "",
@@ -112,13 +114,16 @@ export default function CustomerEdit() {
             id:data.Location?._id||"",
             name:data.Location?.Name||""
           },
+          SubLocation:{
+            id:data.SubLocation?._id||"",
+            name:data.SubLocation?.Name||""
+          },
           CustomerImage: [],
           SitePlan: {} as File,
         });
 
 
-
-
+console.log(" customer data after set ", data.SubLocation)
         // Preview URLs for already existing images
         setImagePreviews(Array.isArray(data.CustomerImage) ? data.CustomerImage : []);
 
@@ -246,6 +251,7 @@ export default function CustomerEdit() {
       if (customerData.ContactNumber) formData.append("ContactNumber", trimCountryCodeHelper(customerData.ContactNumber));
       if (customerData.City) formData.append("City", customerData.City?.name);
       if (customerData.Location) formData.append("Location", customerData.Location?.name);
+      if (customerData.SubLocation) formData.append("SubLocation", customerData.SubLocation?.name);
       if (customerData.Area) formData.append("Area", customerData.Area);
       if (customerData.Address) formData.append("Adderess", customerData.Address);
       if (customerData.Email) formData.append("Email", customerData.Email);
@@ -304,7 +310,8 @@ export default function CustomerEdit() {
     { key: "CustomerType", staticData: [] },
     { key: "CustomerSubtype", staticData: [] },
     { key: "City", fetchFn: getCity },
-    { key: "Location", staticData: [] }  // dependent
+    { key: "Location", staticData: [] },  // dependent
+    { key: "SubLocation", staticData: [] }  // dependent
 
   ];
 
@@ -343,7 +350,12 @@ export default function CustomerEdit() {
     } else {
       setFieldOptions((prev) => ({ ...prev, Location: [] }));
     }
-  }, [customerData.Campaign.id, customerData.CustomerType.id, customerData.City.id]);
+    if (customerData.City.id && customerData.Location.id) {
+      fetchSubLocation(customerData.City.id, customerData.Location.id);
+    } else {
+      setFieldOptions((prev) => ({ ...prev, SubLocation: [] }));
+    }
+  }, [customerData.Campaign.id, customerData.CustomerType.id, customerData.City.id, customerData.Location.id]);
 
   const fetchCustomerType = async (campaignId: string) => {
     try {
@@ -365,6 +377,16 @@ export default function CustomerEdit() {
       setFieldOptions((prev) => ({ ...prev, Location: [] }));
     }
   };
+
+   const fetchSubLocation = async (cityId: string,locationId: string) => {
+      try {
+        const res = await getsubLocationByCityLoc(cityId,locationId);
+        setFieldOptions((prev) => ({ ...prev, SubLocation: res || [] }));
+      } catch (error) {
+        console.error("Error fetching sublocation:", error);
+        setFieldOptions((prev) => ({ ...prev, SubLocation: [] }));
+      }
+    };
 
   const fetchCustomerSubType = async (campaignId: string, customertypeId: string) => {
     try {
@@ -472,6 +494,7 @@ export default function CustomerEdit() {
                       ...prev,
                       City: { id: selectedObj._id, name: selectedObj.Name },
                       Location: { id: "", name: "" }, // reset on change
+                      SubLocation: { id: "", name: "" } // reset on change
                     }));
                   }
                 }}
@@ -489,10 +512,28 @@ export default function CustomerEdit() {
                     setCustomerData((prev) => ({
                       ...prev,
                       Location: { id: selectedObj._id, name: selectedObj.Name },
+                      SubLocation: { id: "", name: "" }, // reset on change
                     }));
                   }
                 }}
                 error={errors.Location}
+              />
+              <ObjectSelect
+                options={Array.isArray(fieldOptions?.SubLocation) ? fieldOptions.SubLocation : []}
+                label="SubLocation"
+                value={customerData.SubLocation.id}
+                getLabel={(item) => item?.Name || ""}
+                getId={(item) => item?._id || ""}
+                onChange={(selectedId) => {
+                  const selectedObj = fieldOptions.SubLocation.find((i) => i._id === selectedId);
+                  if (selectedObj) {
+                    setCustomerData((prev) => ({
+                      ...prev,
+                      SubLocation: { id: selectedObj._id, name: selectedObj.Name },
+                    }));
+                  }
+                }}
+                error={errors.SubLocation}
               />
               <InputField className=" max-sm:hidden" label="Area" name="Area" value={customerData.Area} onChange={handleInputChange} />
               <InputField className=" max-sm:hidden" label="Address" name="Address" value={customerData.Address} onChange={handleInputChange} />

@@ -25,6 +25,7 @@ import InputField from "@/app/component/datafields/InputField";
 import TextareaField from "@/app/component/datafields/TextareaField";
 import { getFilteredContact } from "@/store/contact";
 import { trimCountryCodeHelper } from "@/app/utils/trimCountryCodeHelper";
+import { getsubLocationByCityLoc } from "@/store/masters/sublocation/sublocation";
 
 interface ErrorInterface {
   [key: string]: string;
@@ -39,6 +40,7 @@ export default function CustomerAdd() {
     ContactNumber: "",
     City: { id: "", name: "" },
     Location: { id: "", name: "" },
+    SubLocation: { id: "", name: "" },
     Area: "",
     Address: "",
     Email: "",
@@ -191,6 +193,7 @@ const handleContactExist = async (contactNo: string) => {
       if (customerData.ContactNumber) formData.append("ContactNumber", trimCountryCodeHelper(customerData.ContactNumber));
       if (customerData.City) formData.append("City", customerData.City.name);
       if (customerData.Location) formData.append("Location", customerData.Location?.name);
+      if (customerData.SubLocation) formData.append("SubLocation", customerData.SubLocation?.name);
       if (customerData.Area) formData.append("Area", customerData.Area);
       if (customerData.Address) formData.append("Adderess", customerData.Address);
       if (customerData.Email) formData.append("Email", customerData.Email);
@@ -233,7 +236,8 @@ const handleContactExist = async (contactNo: string) => {
     { key: "CustomerType", staticData: [] },
     { key: "CustomerSubtype", staticData: [] },
     { key: "City", fetchFn: getCity },
-    { key: "Location", staticData: [] } // dependent
+    { key: "Location", staticData: [] }, // dependent
+    { key: "SubLocation", staticData: [] }, // dependent
 
   ];
 
@@ -273,7 +277,12 @@ const handleContactExist = async (contactNo: string) => {
     } else {
       setFieldOptions((prev) => ({ ...prev, Location: [] }));
     }
-  }, [customerData.Campaign.id, customerData.CustomerType.id,customerData.City.id]);
+    if (customerData.City.id && customerData.Location.id) {
+      fetchSubLocation(customerData.City.id, customerData.Location.id);
+    } else {
+      setFieldOptions((prev) => ({ ...prev, SubLocation: [] }));
+    }
+  }, [customerData.Campaign.id, customerData.CustomerType.id,customerData.City.id, customerData.Location.id]);
 
   const fetchCustomerType = async (campaignId: string) => {
     try {
@@ -293,6 +302,16 @@ const handleContactExist = async (contactNo: string) => {
     } catch (error) {
       console.error("Error fetching location:", error);
       setFieldOptions((prev) => ({ ...prev, Location: [] }));
+    }
+  };
+
+  const fetchSubLocation = async (cityId: string,locationId: string) => {
+    try {
+      const res = await getsubLocationByCityLoc(cityId,locationId);
+      setFieldOptions((prev) => ({ ...prev, SubLocation: res || [] }));
+    } catch (error) {
+      console.error("Error fetching sublocation:", error);
+      setFieldOptions((prev) => ({ ...prev, SubLocation: [] }));
     }
   };
 
@@ -405,6 +424,7 @@ const handleContactExist = async (contactNo: string) => {
                       ...prev,
                       City: { id: selectedObj._id, name: selectedObj.Name },
                       Location: { id: "", name: "" }, // reset on change
+                      SubLocation: { id: "", name: "" } // reset on change
                     }));
                   }
                 }}
@@ -422,10 +442,28 @@ const handleContactExist = async (contactNo: string) => {
                     setCustomerData((prev) => ({
                       ...prev,
                       Location: { id: selectedObj._id, name: selectedObj.Name },
+                      SubLocation: { id: "", name: "" } // reset on change
                     }));
                   }
                 }}
                 error={errors.Location}
+              />
+              <ObjectSelect
+                options={Array.isArray(fieldOptions?.SubLocation) ? fieldOptions.SubLocation : []}
+                label="SubLocation"
+                value={customerData.SubLocation.id}
+                getLabel={(item) => item?.Name || ""}
+                getId={(item) => item?._id || ""}
+                onChange={(selectedId) => {
+                  const selectedObj = fieldOptions.SubLocation.find((i) => i._id === selectedId);
+                  if (selectedObj) {
+                    setCustomerData((prev) => ({
+                      ...prev,
+                      SubLocation: { id: selectedObj._id, name: selectedObj.Name },
+                    }));
+                  }
+                }}
+                error={errors.SubLocation}
               />
               <InputField className=" max-sm:hidden" label="Area" name="Area" value={customerData.Area} onChange={handleInputChange} />
               <InputField className=" max-sm:hidden" label="Address" name="Address" value={customerData.Address} onChange={handleInputChange} />

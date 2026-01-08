@@ -84,7 +84,7 @@ const OwnerFollowups = () => {
 
 
         //percentage calculation of followups/totalcustomer
-        const percentage = (FollowupsCustomers! / totalCustomers) * 100;
+        const percentage = totalCustomers? (FollowupsCustomers! / totalCustomers) * 100 : 0;
         const interestedPercentage =
             totalFollowups! > 0 ? (interestedFollowups! / totalFollowups!) * 100 : 0;
         const unInterestedPercentage =
