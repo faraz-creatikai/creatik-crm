@@ -26,3 +26,7 @@ export interface subLocationDialogDataInterface {
     City:string;
     Location:string;
   }
+
+export interface subLocationDeleteAllPayloadInterface {
+    subLocationIds: string[];
+}

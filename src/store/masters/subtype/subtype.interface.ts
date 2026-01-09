@@ -24,3 +24,7 @@ export interface subtypeDialogDataInterface {
     Name: string,
     Status: string
 }
+
+export interface subtypeDeleteAllPayloadInterface {
+  subTypeIds: string[];
+}

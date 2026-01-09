@@ -9,22 +9,26 @@ import { PlusSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import DeleteDialog from "@/app/component/popups/DeleteDialog";
 import { subtypeDialogDataInterface, subtypeGetDataInterface } from "@/store/masters/subtype/subtype.interface";
-import { deleteSubtype, getSubtype } from "@/store/masters/subtype/subtype";
+import { deleteAllSubtype, deleteSubtype, getSubtype } from "@/store/masters/subtype/subtype";
 import AddButton from "@/app/component/buttons/AddButton";
 import PageHeader from "@/app/component/labels/PageHeader";
 import MasterProtectedRoute from "@/app/component/MasterProtectedRoutes";
 
-
+interface DeleteAllDialogDataInterface { }
 
 export default function CustomerSubtypePage() {
   const [subtypes, setSubtypes] = useState<subtypeGetDataInterface[]>([]);
   const [keyword, setKeyword] = useState("");
   const [limit, setLimit] = useState("10");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const [deleteDialogData, setDeleteDialogData] =
     useState<subtypeDialogDataInterface | null>(null);
+  const [deleteAllDialogData, setDeleteAllDialogData] =
+    useState<DeleteAllDialogDataInterface | null>(null);
   const [currentTablePage, setCurrentTablePage] = useState(1);
   const [rowsPerTablePage, setRowsPerTablePage] = useState(10);
+  const [selectedSubTypes, setSelectedSubTypes] = useState<string[]>([]);
   const router = useRouter();
 
   const fetchSubtypes = async () => {
@@ -59,6 +63,24 @@ export default function CustomerSubtypePage() {
       )
   }, [subtypes, keyword]);
 
+  /* SELECT ALL HANDLER */
+  const handleSelectAll = () => {
+    const allIds = currentRows.map((c) => c._id);
+    setSelectedSubTypes((prev) =>
+      allIds.every((id) => prev.includes(id))
+        ? prev.filter((id) => !allIds.includes(id)) // unselect all
+        : [...new Set([...prev, ...allIds])] // select all visible rows
+    );
+  };
+  /* ✅ SELECT SINGLE ROW HANDLER */
+  const handleSelectRow = (id: string) => {
+    setSelectedSubTypes((prev) =>
+      prev.includes(id)
+        ? prev.filter((cid) => cid !== id)
+        : [...prev, id]
+    );
+  };
+
   const handleDelete = async (data: subtypeDialogDataInterface | null) => {
     if (!data) return;
     const res = await deleteSubtype(data.id);
@@ -70,6 +92,23 @@ export default function CustomerSubtypePage() {
       return;
     }
     toast.error("Failed to delete Customer Subtype.");
+  };
+
+  const handleDeleteAll = async () => {
+    if (subtypes.length === 0) return;
+    const payload = {
+      subTypeIds: [...selectedSubTypes]
+    }
+    const response = await deleteAllSubtype(payload);
+    if (response) {
+      toast.success(`All types deleted`);
+      setIsDeleteAllDialogOpen(false);
+      setDeleteAllDialogData(null);
+      setSelectedSubTypes([]);
+
+      fetchSubtypes();
+      return;
+    }
   };
 
   const handleEdit = (id?: string) => {
@@ -103,6 +142,17 @@ export default function CustomerSubtypePage() {
             setDeleteDialogData(null);
           }}
           onDelete={handleDelete}
+        />
+
+        <DeleteDialog<DeleteAllDialogDataInterface>
+          isOpen={isDeleteAllDialogOpen}
+          title="Are you sure you want to delete selected subtypes?"
+          data={deleteAllDialogData}
+          onClose={() => {
+            setIsDeleteAllDialogOpen(false);
+            setDeleteAllDialogData(null);
+          }}
+          onDelete={handleDeleteAll}
         />
 
         <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 relative">
@@ -145,11 +195,44 @@ export default function CustomerSubtypePage() {
             </div>
           </form>
 
-          <div className="overflow-auto">
+          <div className="overflow-auto relative">
+             <div className=" flex justify-between items-center sticky top-0 left-0 w-full">
+              <div className="flex gap-10 items-center px-3 py-4 min-w-max text-gray-700">
+                <label htmlFor="selectall" className=" relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)]  rounded-tr-sm rounded-br-sm  border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer">
+                    <div className=" absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300 "></div>
+                    <span className="relative">Select All</span>
+                  </label>
+                  <button type="button" className=" relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)]  rounded-tr-sm rounded-br-sm  border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer" onClick={() => {
+                      if (subtypes.length > 0) {
+                        if (selectedSubTypes.length < 1) {
+                          const firstPageIds = currentRows.map((c) => c._id);
+                          setSelectedSubTypes(firstPageIds);
+                        }
+
+                        setIsDeleteAllDialogOpen(true);
+                        setDeleteAllDialogData({});
+                      }
+                    }}><div className=" absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300 "></div>
+                      <span className="relative ">Delete All</span>
+                    </button>
+              </div>
+            </div>
             <table className="table-auto w-full border-collapse text-sm border border-gray-200">
               <thead className="bg-[var(--color-primary)] text-white">
                 <tr className="flex justify-between items-center w-full">
                   <th className="flex items-center gap-8 px-8 py-3 border border-[var(--color-secondary-dark)] text-left w-2/3">
+                  <p className="w-[30px]">
+                      <input
+                        id="selectall"
+                        type="checkbox"
+                        className=" hidden"
+                        checked={
+                          currentRows.length > 0 &&
+                          currentRows.every((r) => selectedSubTypes.includes(r._id))
+                        }
+                        onChange={handleSelectAll}
+                      />
+                    </p>
                     <p className="w-[60px]">S.No.</p>
                     <p className="w-[160px]">Campaign</p>
                     <p className="w-[160px]">Customer Type</p>
@@ -168,6 +251,13 @@ export default function CustomerSubtypePage() {
                   currentRows.map((s, i) => (
                     <tr key={s._id || i} className="border-t flex justify-between items-center w-full hover:bg-[#f7f6f3] transition-all duration-200">
                       <td className="flex items-center gap-8 px-8 py-3 w-2/3">
+                      <p className="w-[30px]">
+                          <input
+                            type="checkbox"
+                            checked={selectedSubTypes.includes(s._id)}
+                            onChange={() => handleSelectRow(s._id)}
+                          />
+                        </p>
                         <p className="w-[60px]">{indexOfFirstRow + i + 1}</p>
                         <p className="w-[160px]">{s.Campaign?.Name}</p>
                         <p className="w-[160px] text-gray-700  break-all whitespace-normal max-w-[160px]">{s.CustomerType?.Name}</p>

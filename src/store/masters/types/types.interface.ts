@@ -19,3 +19,7 @@ export interface typesDialogDataInterface {
     Name: string;
     Status: string;
 }
+
+export interface typeDeleteAllPayloadInterface {
+  typeIds: string[];
+}

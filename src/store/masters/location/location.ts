@@ -1,5 +1,5 @@
 import { API_ROUTES } from "@/constants/ApiRoute";
-import { locationAllDataInterface } from "./location.interface";
+import { locationAllDataInterface, locationDeleteAllPayloadInterface } from "./location.interface";
 
 export const getLocation = async () => {
     try {
@@ -123,6 +123,24 @@ export const deleteLocation = async (id: string) => {
         const response = await fetch(API_ROUTES.MASTERS.LOCATION.DELETE(id), {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
+            credentials: "include"
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data;
+    }
+    catch (error) {
+        console.log("SERVER ERROR: ", error);
+        return null;
+    }
+};
+
+export const deleteAllLocation = async (payload: locationDeleteAllPayloadInterface) => {
+    try {
+        const response = await fetch(API_ROUTES.MASTERS.LOCATION.DELETEALL, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
             credentials: "include"
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);

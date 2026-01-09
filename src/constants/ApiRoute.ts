@@ -1,4 +1,4 @@
-export const BASE_URL = "https://apiproperty.ibigdata.in/api";
+export const BASE_URL = "http://localhost:5000/api";
 //https://live-project-backend-1.onrender.com
 //https://propertyapi.aileadgenie.cloud/api
 //https://apiconsult.ibigdata.in
@@ -96,6 +96,7 @@ export const API_ROUTES = {
       ADD: `${BASE_URL}/mas/type`,
       UPDATE: (id: string) => `${BASE_URL}/mas/type/${id}`,
       DELETE: (id: string) => `${BASE_URL}/mas/type/${id}`,
+      DELETEALL: `${BASE_URL}/mas/type`,
     },
     SUBTYPE: {
       GET_ALL: `${BASE_URL}/mas/sub`,
@@ -105,6 +106,7 @@ export const API_ROUTES = {
       ADD: `${BASE_URL}/mas/sub`,
       UPDATE: (id: string) => `${BASE_URL}/mas/sub/${id}`,
       DELETE: (id: string) => `${BASE_URL}/mas/sub/${id}`,
+      DELETEALL: `${BASE_URL}/mas/sub`,
     },
     CITY: {
       GET_ALL: `${BASE_URL}/mas/city`,
@@ -122,6 +124,7 @@ export const API_ROUTES = {
       ADD: `${BASE_URL}/mas/loc`,
       UPDATE: (id: string) => `${BASE_URL}/mas/loc/${id}`,
       DELETE: (id: string) => `${BASE_URL}/mas/loc/${id}`,
+      DELETEALL: `${BASE_URL}/mas/loc`,
     },
     SUBLOCATION: {
       GET_ALL: `${BASE_URL}/mas/subloc`,
@@ -131,6 +134,7 @@ export const API_ROUTES = {
       ADD: `${BASE_URL}/mas/subloc`,
       UPDATE: (id: string) => `${BASE_URL}/mas/subloc/${id}`,
       DELETE: (id: string) => `${BASE_URL}/mas/subloc/${id}`,
+      DELETEALL: `${BASE_URL}/mas/subloc`,
     },
     FACILITIES: {
       GET_ALL: `${BASE_URL}/mas/fac`,

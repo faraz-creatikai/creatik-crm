@@ -43,6 +43,7 @@ import { useAuth } from "@/context/AuthContext";
 import { exportToExcel } from "../utils/exportToExcel";
 import { getsubLocationByCityLoc } from "@/store/masters/sublocation/sublocation";
 import { Sub } from "@radix-ui/react-dropdown-menu";
+import { formatDateDMY } from "../utils/formatDateDMY";
 
 
 interface DeleteAllDialogDataInterface { }
@@ -227,7 +228,7 @@ export default function Customer() {
       ContactNumber: item.ContactNumber?.slice(0, 10),
       AssignTo: item.AssignTo?.name,
       isFavourite: item.isFavourite,
-      Date: item.date ?? formattedDate,
+      Date: formatDateDMY(item.CustomerDate )?? formattedDate,
       SitePlan: item.SitePlan || "",
     };
   };

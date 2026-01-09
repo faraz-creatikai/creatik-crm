@@ -1,7 +1,7 @@
 // note do not use any
 
 import { API_ROUTES } from "@/constants/ApiRoute"
-import { typesAllDataInterface } from "./types.interface";
+import { typeDeleteAllPayloadInterface, typesAllDataInterface } from "./types.interface";
 
 
 
@@ -127,6 +127,27 @@ export const deleteTypes = async (id: string) => {
             {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include"
+            }
+        );
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data;
+
+    }
+    catch (error) {
+        console.log("SERVER ERROR: ", error)
+        return null;
+    }
+}
+
+export const deleteAllTypes = async (payload: typeDeleteAllPayloadInterface) => {
+    try {
+        const response = await fetch(API_ROUTES.MASTERS.TYPES.DELETEALL,
+            {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
                 credentials: "include"
             }
         );

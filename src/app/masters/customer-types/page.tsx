@@ -12,21 +12,27 @@ import {
   typesGetDataInterface,
   typesDialogDataInterface,
 } from "@/store/masters/types/types.interface";
-import { deleteTypes, getTypes } from "@/store/masters/types/types";
+import { deleteAllTypes, deleteTypes, getTypes } from "@/store/masters/types/types";
 import DeleteDialog from "@/app/component/popups/DeleteDialog";
 import AddButton from "@/app/component/buttons/AddButton";
 import PageHeader from "@/app/component/labels/PageHeader";
 import MasterProtectedRoute from "@/app/component/MasterProtectedRoutes";
+
+interface DeleteAllDialogDataInterface { }
 
 export default function CustomerTypePage() {
   const [types, setTypes] = useState<typesGetDataInterface[]>([]);
   const [keyword, setKeyword] = useState("");
   const [limit, setLimit] = useState("10");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const [deleteDialogData, setDeleteDialogData] =
     useState<typesDialogDataInterface | null>(null);
+    const [deleteAllDialogData, setDeleteAllDialogData] =
+        useState<DeleteAllDialogDataInterface | null>(null);
   const [currentTablePage, setCurrentTablePage] = useState(1);
   const [rowsPerTablePage, setRowsPerTablePage] = useState(10);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const router = useRouter();
 
   const fetchTypes = async () => {
@@ -59,6 +65,24 @@ export default function CustomerTypePage() {
       )
   }, [types, keyword]);
 
+  /* SELECT ALL HANDLER */
+  const handleSelectAll = () => {
+    const allIds = currentRows.map((c) => c._id);
+    setSelectedTypes((prev) =>
+      allIds.every((id) => prev.includes(id))
+        ? prev.filter((id) => !allIds.includes(id)) // unselect all
+        : [...new Set([...prev, ...allIds])] // select all visible rows
+    );
+  };
+  /* ✅ SELECT SINGLE ROW HANDLER */
+  const handleSelectRow = (id: string) => {
+    setSelectedTypes((prev) =>
+      prev.includes(id)
+        ? prev.filter((cid) => cid !== id)
+        : [...prev, id]
+    );
+  };
+
   const handleDelete = async (data: typesDialogDataInterface | null) => {
     if (!data) return;
     const res = await deleteTypes(data.id);
@@ -74,6 +98,23 @@ export default function CustomerTypePage() {
 
   const handleEdit = (id?: string) => {
     router.push(`/masters/customer-types/edit/${id}`);
+  };
+
+  const handleDeleteAll = async () => {
+    if (filteredTypes.length === 0) return;
+    const payload = {
+      typeIds: [...selectedTypes]
+    }
+    const response = await deleteAllTypes(payload);
+    if (response) {
+      toast.success(`All types deleted`);
+      setIsDeleteAllDialogOpen(false);
+      setDeleteAllDialogData(null);
+      setSelectedTypes([]);
+
+      fetchTypes();
+      return;
+    }
   };
 
   const handleClear = () => {
@@ -95,13 +136,24 @@ export default function CustomerTypePage() {
         {/* DELETE POPUP */}
         <DeleteDialog<typesDialogDataInterface>
           isOpen={isDeleteDialogOpen}
-          title="Are you sure you want to delete this followup?"
+          title="Are you sure you want to delete this type?"
           data={deleteDialogData}
           onClose={() => {
             setIsDeleteDialogOpen(false);
             setDeleteDialogData(null);
           }}
           onDelete={handleDelete}
+        />
+
+        <DeleteDialog<DeleteAllDialogDataInterface>
+          isOpen={isDeleteAllDialogOpen}
+          title="Are you sure you want to delete selected types?"
+          data={deleteAllDialogData}
+          onClose={() => {
+            setIsDeleteAllDialogOpen(false);
+            setDeleteAllDialogData(null);
+          }}
+          onDelete={handleDeleteAll}
         />
 
 
@@ -166,11 +218,45 @@ export default function CustomerTypePage() {
           </form>
 
           {/* Table */}
-          <div className="overflow-auto">
+          <div className="overflow-auto relative">
+            <div className=" flex justify-between items-center sticky top-0 left-0 w-full">
+              <div className="flex gap-10 items-center px-3 py-4 min-w-max text-gray-700">
+                <label htmlFor="selectall" className=" relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)]  rounded-tr-sm rounded-br-sm  border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer">
+                    <div className=" absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300 "></div>
+                    <span className="relative">Select All</span>
+                  </label>
+                  <button type="button" className=" relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)]  rounded-tr-sm rounded-br-sm  border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer" onClick={() => {
+                      if (filteredTypes.length > 0) {
+                        if (selectedTypes.length < 1) {
+                          const firstPageIds = currentRows.map((c) => c._id);
+                          setSelectedTypes(firstPageIds);
+                        }
+
+                        setIsDeleteAllDialogOpen(true);
+                        setDeleteAllDialogData({});
+                      }
+                    }}><div className=" absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300 "></div>
+                      <span className="relative ">Delete All</span>
+                    </button>
+              </div>
+            </div>
             <table className="table-auto w-full border-collapse text-sm border border-gray-200">
               <thead className="bg-[var(--color-primary)] text-white">
                 <tr className="flex justify-between items-center w-full">
                   <th className="flex items-center gap-10 px-8 py-3 border border-[var(--color-secondary-dark)] text-left w-1/2">
+                    <p className="w-[30px]">
+                      <input
+                        id="selectall"
+                        type="checkbox"
+                        className=" hidden"
+                        checked={
+                          currentRows.length > 0 &&
+                          currentRows.every((r) => selectedTypes.includes(r._id))
+                        }
+                        onChange={handleSelectAll}
+                      />
+                    </p>
+
                     <p className="w-[60px]">S.No.</p>
                     <p className="w-[200px]">Campaign</p>
                     <p className="w-[200px]">Name</p>
@@ -191,6 +277,13 @@ export default function CustomerTypePage() {
                       className="border-t flex justify-between items-center w-full hover:bg-[#f7f6f3] transition-all duration-200"
                     >
                       <td className="flex items-center gap-10 px-8 py-3 w-1/2">
+                        <p className="w-[60px]">
+                          <input
+                            type="checkbox"
+                            checked={selectedTypes.includes(t._id)}
+                            onChange={() => handleSelectRow(t._id)}
+                          />
+                        </p>
                         <p className="w-[60px]">{(currentTablePage - 1) * rowsPerTablePage + (i + 1)}</p>
                         <p className="w-[200px]">{t.Campaign?.Name}</p>
                         <p className="w-[200px] font-semibold break-all whitespace-normal max-w-[200px]">{t.Name}</p>

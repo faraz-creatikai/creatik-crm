@@ -9,7 +9,7 @@ import { PlusSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PopupMenu from "../../component/popups/PopupMenu";
 import DeleteDialog from "@/app/component/popups/DeleteDialog";
-import { deleteLocation, getLocation } from "@/store/masters/location/location";
+import { deleteAllLocation, deleteLocation, getLocation } from "@/store/masters/location/location";
 import { locationAllDataInterface } from "@/store/masters/location/location.interface";
 import AddButton from "@/app/component/buttons/AddButton";
 import PageHeader from "@/app/component/labels/PageHeader";
@@ -20,8 +20,8 @@ interface LocationType {
   _id?: string;
   Name: string;
   City: {
-    _id:string;
-    Name:string;
+    _id: string;
+    Name: string;
   };
   Status: string;
 }
@@ -31,15 +31,21 @@ interface DeleteDialogData {
   name: string;
 }
 
+interface DeleteAllDialogDataInterface { }
+
 export default function LocationPage() {
   const [locations, setLocations] = useState<LocationType[]>([]);
   const [keyword, setKeyword] = useState("");
   const [limit, setLimit] = useState("10");
   const [selectedCity, setSelectedCity] = useState("");
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteDialogData, setDeleteDialogData] = useState<DeleteDialogData | null>(null);
+  const [deleteAllDialogData, setDeleteAllDialogData] =
+    useState<DeleteAllDialogDataInterface | null>(null);
   const [currentTablePage, setCurrentTablePage] = useState(1);
   const [rowsPerTablePage, setRowsPerTablePage] = useState(10);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const router = useRouter();
 
   // Fetch locations
@@ -55,7 +61,7 @@ export default function LocationPage() {
     const dataFormat = data.map((l: locationAllDataInterface) => ({
       ...l,
       Name: l.Name.charAt(0).toUpperCase() + l.Name.slice(1),
-    
+
     }));
 
     setLocations(dataFormat);
@@ -84,6 +90,24 @@ export default function LocationPage() {
       })
   }, [locations, keyword, selectedCity, limit]);
 
+  /* SELECT ALL HANDLER */
+  const handleSelectAll = () => {
+    const allIds = currentRows.map((c) => c._id);
+    setSelectedLocations((prev: any) =>
+      allIds.every((id) => prev.includes(id))
+        ? prev.filter((id: any) => !allIds.includes(id)) // unselect all
+        : [...new Set([...prev, ...allIds])] // select all visible rows
+    );
+  };
+  /* ✅ SELECT SINGLE ROW HANDLER */
+  const handleSelectRow = (id: string) => {
+    setSelectedLocations((prev) =>
+      prev.includes(id)
+        ? prev.filter((cid) => cid !== id)
+        : [...prev, id]
+    );
+  };
+
   // Pagination
   const totalTablePages = Math.ceil(filteredLocations.length / rowsPerTablePage);
   const indexOfLastRow = currentTablePage * rowsPerTablePage;
@@ -109,6 +133,23 @@ export default function LocationPage() {
       return;
     }
     toast.error("Failed to delete location.");
+  };
+
+  const handleDeleteAll = async () => {
+    if (filteredLocations.length === 0) return;
+    const payload = {
+      locationIds: [...selectedLocations]
+    }
+    const response = await deleteAllLocation(payload);
+    if (response) {
+      toast.success(`All types deleted`);
+      setIsDeleteAllDialogOpen(false);
+      setDeleteAllDialogData(null);
+      setSelectedLocations([]);
+
+      fetchLocations();
+      return;
+    }
   };
 
   // Edit location
@@ -138,6 +179,17 @@ export default function LocationPage() {
             setDeleteDialogData(null);
           }}
           onDelete={handleDelete}
+        />
+
+        <DeleteDialog<DeleteAllDialogDataInterface>
+          isOpen={isDeleteAllDialogOpen}
+          title="Are you sure you want to delete selected locations?"
+          data={deleteAllDialogData}
+          onClose={() => {
+            setIsDeleteAllDialogOpen(false);
+            setDeleteAllDialogData(null);
+          }}
+          onDelete={handleDeleteAll}
         />
 
 
@@ -218,11 +270,44 @@ export default function LocationPage() {
 
           {/* Table */}
           <div className="overflow-auto">
+            <div className=" flex justify-between items-center sticky top-0 left-0 w-full">
+              <div className="flex gap-10 items-center px-3 py-4 min-w-max text-gray-700">
+                <label htmlFor="selectall" className=" relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)]  rounded-tr-sm rounded-br-sm  border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer">
+                    <div className=" absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300 "></div>
+                    <span className="relative">Select All</span>
+                  </label>
+                  <button type="button" className=" relative overflow-hidden py-[2px] group hover:bg-[var(--color-primary-lighter)] hover:text-white text-[var(--color-primary)] bg-[var(--color-primary-lighter)]  rounded-tr-sm rounded-br-sm  border-l-[3px] px-2 border-l-[var(--color-primary)] cursor-pointer" onClick={() => {
+                      if (filteredLocations.length > 0) {
+                        if (selectedLocations.length < 1) {
+                          const firstPageIds = currentRows.map((c) => c._id).filter((id): id is string => id !== undefined);
+                          setSelectedLocations(firstPageIds);
+                        }
+
+                        setIsDeleteAllDialogOpen(true);
+                        setDeleteAllDialogData({});
+                      }
+                    }}><div className=" absolute top-0 left-0 z-0 h-full bg-[var(--color-primary)] w-0 group-hover:w-full transition-all duration-300 "></div>
+                      <span className="relative ">Delete All</span>
+                    </button>
+              </div>
+            </div>
             <table className="table-auto w-full border-collapse text-sm border border-gray-200">
               <thead className="bg-[var(--color-primary)] text-white">
                 <tr className="flex justify-between items-center w-full">
                   {/* Left section (S.No + Name + City) */}
                   <th className="flex items-center gap-10 px-8 py-3 border border-[var(--color-secondary-dark)] text-left w-2/3">
+                    <p className="w-[30px]">
+                      <input
+                        id="selectall"
+                        type="checkbox"
+                        className=" hidden"
+                        checked={
+                          currentRows.length > 0 &&
+                          currentRows.every((r: any) => selectedLocations.includes(r._id))
+                        }
+                        onChange={handleSelectAll}
+                      />
+                    </p>
                     <p className="w-[60px] text-left">S.No.</p>
                     <p className="w-[200px] text-left">Location Name</p>
                     <p className="w-[200px] text-left">City</p>
@@ -244,6 +329,13 @@ export default function LocationPage() {
                       className="border-t flex justify-between items-center w-full hover:bg-[#f7f6f3] transition-all duration-200"
                     >
                       <td className="flex items-center gap-10 px-8 py-3 w-2/3">
+                        <p className="w-[60px]">
+                          <input
+                            type="checkbox"
+                            checked={selectedLocations.includes(l._id ?? '')}
+                            onChange={() => handleSelectRow(l._id ?? '')}
+                          />
+                        </p>
                         <p className="w-[60px]">{(currentTablePage - 1) * rowsPerTablePage + (i + 1)}</p>
                         <p className="w-[200px] font-semibold">{l.Name}</p>
                         <p className="w-[200px]">{l.City?.Name}</p>
