@@ -1,4 +1,4 @@
-export const BASE_URL = "https://apiproperty.ibigdata.in/api";
+export const BASE_URL = "https://apiairbnb.ibigdata.in/api";
 //https://live-project-backend-1.onrender.com
 //https://propertyapi.aileadgenie.cloud/api
 //https://apiconsult.ibigdata.in
@@ -6,6 +6,7 @@ export const BASE_URL = "https://apiproperty.ibigdata.in/api";
 //https://apiwbh.ibigdata.in
 //https://apiproperty.ibigdata.in
 //https://apitravel.ibigdata.in
+//https://apiairbnb.ibigdata.in
 
 export const API_ROUTES = {
   CONTACT: {
